@@ -112,22 +112,20 @@ nav_msgs::msg::Path StraightLine::createPlan(
   global_path.header.stamp = node_->now();
   global_path.header.frame_id = global_frame_;
   // calculating the number of loops for current value of interpolation_resolution_
-  int total_number_of_loop = std::hypot(
-    goal.pose.position.x - start.pose.position.x,
-    goal.pose.position.y - start.pose.position.y) /
-    interpolation_resolution_;
-  double x_increment = (goal.pose.position.x - start.pose.position.x) / total_number_of_loop;
-  double y_increment = (goal.pose.position.y - start.pose.position.y) / total_number_of_loop;
+  double dx = goal.pose.position.x - start.pose.position.x;
+  double dy = goal.pose.position.y - start.pose.position.y;
+  int total_number_of_loop = std::hypot(dx, dy) / interpolation_resolution_;
+  double x_increment = dx / total_number_of_loop;
+  double y_increment = dy / total_number_of_loop;
 
   for (int i = 0; i < total_number_of_loop; ++i) {
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = start.pose.position.x + x_increment * i;
     pose.pose.position.y = start.pose.position.y + y_increment * i;
     pose.pose.position.z = 0.0;
-    pose.pose.orientation.x = 0.0;
-    pose.pose.orientation.y = 0.0;
-    pose.pose.orientation.z = 0.0;
-    pose.pose.orientation.w = 1.0;
+    tf2::Quaternion q;
+    q.setRPY(0, 0, std::atan2(dy, dx));
+    pose.pose.orientation = tf2::toMsg(q);
     pose.header.stamp = node_->now();
     pose.header.frame_id = global_frame_;
     global_path.poses.push_back(pose);
